@@ -55,8 +55,29 @@
       n.classList.toggle('active', n.dataset.page === id);
     });
     if (id === 'upload-check') {
-      const header = document.querySelector('#page-upload-check .page-header.with-back');
+      const header = document.querySelector('#page-upload-check .screen-header.with-back');
       if (header) header.dataset.back = backData || 'dashboard';
+    }
+    if (id === 'wallet') loadWallet();
+    if (id === 'deals') loadDeals();
+    updateDealsUI();
+  }
+
+  function updateDealsUI() {
+    const exchangeTab = document.querySelector('.tab-btn.tab-exchange');
+    const tabsWrap = document.getElementById('deals-tabs-wrap');
+    if (exchangeTab && tabsWrap) {
+      if (state.isMerchant) {
+        exchangeTab.classList.remove('hidden-merchant');
+      } else {
+        exchangeTab.classList.add('hidden-merchant');
+        const myTab = document.querySelector('.tab-btn[data-tab="my-deals"]');
+        if (myTab && !myTab.classList.contains('active')) {
+          myTab.classList.add('active');
+          document.getElementById('tab-my-deals')?.classList.add('active');
+          document.getElementById('tab-exchange')?.classList.remove('active');
+        }
+      }
     }
   }
 
@@ -119,6 +140,7 @@
     loadDashboard();
     loadDeals();
     loadProfile();
+    updateDealsUI();
   }
 
   // ——— Dashboard ———
@@ -131,17 +153,29 @@
     const rub = usd * state.usdRate;
     document.getElementById('balance-usd').textContent = fmtAmount(usd) + ' $';
     document.getElementById('balance-rub').textContent = fmtAmount(rub) + ' ₽';
+    const rateEl = document.getElementById('dashboard-rate');
+    if (rateEl) rateEl.textContent = '1 $ = ' + fmtAmount(state.usdRate, 2) + ' ₽';
   }
 
   document.querySelector('[data-action="requisites"]')?.addEventListener('click', () => {
     showPage('requisites');
     loadCountries();
   });
+  function resetUploadCheckPage() {
+    state.pendingCheckFile = null;
+    if (checkFileInput) checkFileInput.value = '';
+    document.getElementById('upload-submit')?.classList.add('hidden');
+    document.getElementById('upload-clear')?.classList.add('hidden');
+    const preview = document.getElementById('check-preview');
+    const zoneText = document.getElementById('upload-zone-text');
+    if (preview) { preview.innerHTML = ''; preview.classList.add('hidden'); }
+    if (zoneText) zoneText.classList.remove('hidden');
+  }
+
   document.querySelector('[data-action="send-check"]')?.addEventListener('click', () => {
     state.uploadContext = { type: 'standalone', requisiteId: null, dealId: null };
     showPage('upload-check', 'dashboard');
-    document.getElementById('upload-submit').classList.add('hidden');
-    document.getElementById('check-file').value = '';
+    resetUploadCheckPage();
   });
 
   // ——— Requisites ———
@@ -161,8 +195,8 @@
     (data || []).forEach(c => {
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.className = 'card-item btn-outline';
-      btn.textContent = c.name;
+      btn.className = 'card-item';
+      btn.innerHTML = '<svg class="card-item-icon" width="20" height="20"><use href="#icon-globe"/></svg><span>' + escapeHtml(c.name) + '</span>';
       btn.dataset.countryId = c.id;
       btn.dataset.countryName = c.name;
       btn.addEventListener('click', () => selectCountry(c.id, c.name));
@@ -186,8 +220,8 @@
       (data || []).forEach(b => {
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = 'card-item btn-outline';
-        btn.textContent = b.name;
+        btn.className = 'card-item';
+        btn.innerHTML = '<svg class="card-item-icon" width="20" height="20"><use href="#icon-bank"/></svg><span>' + escapeHtml(b.name) + '</span>';
         btn.addEventListener('click', () => selectBank(b.id));
         container.appendChild(btn);
       });
@@ -207,10 +241,11 @@
     const card = document.getElementById('req-detail-card');
     const cardNum = (r.card_number || '').replace(/\s/g, '');
     const displayCard = cardNum.length >= 4 ? cardNum.replace(/(.{4})/g, '$1 ').trim() : (r.card_number || '—');
+    const copyVal = (r.card_number || '').replace(/\s/g, '');
     card.innerHTML = `
-      <div class="row"><span>Получатель</span><strong>${escapeHtml(r.recipient_name)}</strong></div>
-      <div class="row"><span>Карта</span><span><code>${escapeHtml(displayCard)}</code> <button type="button" class="copy-btn" data-copy="${escapeHtml((r.card_number || '').replace(/\s/g, ''))}">Копировать</button></span></div>
-      <div class="row"><span>Мин / Макс</span><span>${fmtAmount(r.min_amount, 0)} – ${fmtAmount(r.max_amount, 0)} ₽</span></div>
+      <div class="row"><span class="label">Получатель</span><strong>${escapeHtml(r.recipient_name)}</strong></div>
+      <div class="row"><span class="label">Карта</span><span><code>${escapeHtml(displayCard)}</code> <button type="button" class="copy-btn" data-copy="${escapeHtml(copyVal)}"><svg width="14" height="14"><use href="#icon-copy"/></svg> Копировать</button></span></div>
+      <div class="row"><span class="label">Мин / Макс</span><span>${fmtAmount(r.min_amount, 0)} – ${fmtAmount(r.max_amount, 0)} ₽</span></div>
     `;
     card.querySelectorAll('.copy-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -224,8 +259,7 @@
     if (!state.currentRequisite) return;
     state.uploadContext = { type: 'requisite', requisiteId: state.currentRequisite.id, dealId: null };
     showPage('upload-check', 'requisites');
-    document.getElementById('upload-submit').classList.add('hidden');
-    document.getElementById('check-file').value = '';
+    resetUploadCheckPage();
   });
 
   document.getElementById('req-p2p-btn')?.addEventListener('click', () => {
@@ -401,14 +435,14 @@
     panel.querySelector('#deal-upload-check')?.addEventListener('click', () => {
       state.uploadContext = { type: 'deal', requisiteId: null, dealId: deal.id };
       showPage('upload-check', 'deals');
-      document.getElementById('upload-submit').classList.add('hidden');
-      document.getElementById('check-file').value = '';
+      resetUploadCheckPage();
     });
   }
 
-  document.querySelectorAll('.tab').forEach(tab => {
+  document.querySelectorAll('.tab-btn').forEach(tab => {
     tab.addEventListener('click', () => {
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      if (tab.classList.contains('hidden-merchant')) return;
+      document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
       tab.classList.add('active');
       const id = tab.dataset.tab;
@@ -440,8 +474,36 @@
 
   function setCheckFile(file) {
     state.pendingCheckFile = file;
+    const zoneText = document.getElementById('upload-zone-text');
+    const preview = document.getElementById('check-preview');
+    const clearBtn = document.getElementById('upload-clear');
+    if (preview) {
+      preview.innerHTML = '';
+      preview.classList.remove('hidden');
+      const img = document.createElement('img');
+      img.src = URL.createObjectURL(file);
+      img.alt = 'Превью чека';
+      img.className = 'check-preview-img';
+      preview.appendChild(img);
+      if (zoneText) zoneText.classList.add('hidden');
+    }
     uploadSubmit?.classList.remove('hidden');
+    if (clearBtn) clearBtn.classList.remove('hidden');
   }
+
+  document.getElementById('upload-clear')?.addEventListener('click', () => {
+    state.pendingCheckFile = null;
+    checkFileInput.value = '';
+    document.getElementById('upload-submit').classList.add('hidden');
+    document.getElementById('upload-clear').classList.add('hidden');
+    const preview = document.getElementById('check-preview');
+    const zoneText = document.getElementById('upload-zone-text');
+    if (preview) {
+      preview.innerHTML = '';
+      preview.classList.add('hidden');
+    }
+    if (zoneText) zoneText.classList.remove('hidden');
+  });
 
   uploadSubmit?.addEventListener('click', () => {
     if (!state.pendingCheckFile) return;
@@ -488,6 +550,11 @@
     }
     state.pendingCheckFile = null;
     uploadSubmit?.classList.add('hidden');
+    document.getElementById('upload-clear')?.classList.add('hidden');
+    const preview = document.getElementById('check-preview');
+    const zoneText = document.getElementById('upload-zone-text');
+    if (preview) { preview.innerHTML = ''; preview.classList.add('hidden'); }
+    if (zoneText) zoneText.classList.remove('hidden');
     checkFileInput.value = '';
     showSuccess('Чек отправлен');
     showToast('Чек на проверке');
@@ -506,15 +573,46 @@
     const rub = usd * state.usdRate;
     document.getElementById('wallet-balance-usd').textContent = fmtAmount(usd) + ' $';
     document.getElementById('wallet-balance-rub').textContent = fmtAmount(rub) + ' ₽';
+    const rateEl = document.getElementById('wallet-rate');
+    if (rateEl) rateEl.textContent = '1 $ = ' + fmtAmount(state.usdRate, 2) + ' ₽';
+    const listEl = document.getElementById('withdrawals-history');
+    if (listEl) {
+      const { data: rows } = await supabase.from('withdrawals').select('id, amount_usd, status, created_at').eq('user_id', state.user.id).order('created_at', { ascending: false }).limit(10);
+      if (!rows?.length) {
+        listEl.innerHTML = '<p class="empty-hint">Заявок на вывод пока нет</p>';
+      } else {
+        listEl.innerHTML = rows.map(w => {
+          const date = w.created_at ? new Date(w.created_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+          const statusClass = w.status === 'confirmed' ? 'confirmed' : 'pending';
+          const statusText = w.status === 'confirmed' ? 'Выполнен' : 'На рассмотрении';
+          return `<div class="withdrawal-row"><span>${fmtAmount(w.amount_usd, 2)} $ · ${date}</span><span class="withdrawal-status ${statusClass}">${statusText}</span></div>`;
+        }).join('');
+      }
+    }
   }
 
   document.getElementById('wallet-withdraw')?.addEventListener('click', () => {
+    const bal = parseFloat(state.user?.balance) || 0;
+    document.getElementById('withdraw-available').textContent = 'Доступно: ' + fmtAmount(bal, 2) + ' $';
     document.getElementById('withdraw-form').classList.remove('hidden');
+    document.getElementById('withdraw-amount').value = '';
+  });
+  document.getElementById('withdraw-cancel')?.addEventListener('click', () => {
+    document.getElementById('withdraw-form').classList.add('hidden');
   });
   document.getElementById('withdraw-submit')?.addEventListener('click', async () => {
     const amount = parseFloat(document.getElementById('withdraw-amount')?.value);
     if (!amount || amount <= 0) {
       showToast('Укажите сумму', 'error');
+      return;
+    }
+    const bal = parseFloat(state.user?.balance) || 0;
+    if (amount > bal) {
+      showToast('Недостаточно средств. Доступно: ' + fmtAmount(bal, 2) + ' $', 'error');
+      return;
+    }
+    if (!state.user?.id) {
+      showToast('Ошибка: пользователь не найден', 'error');
       return;
     }
     const { error } = await supabase.from('withdrawals').insert({
@@ -524,12 +622,15 @@
       status: 'pending'
     });
     if (error) {
-      showToast(error.message, 'error');
+      showToast(error.message || 'Ошибка создания заявки', 'error');
       return;
     }
+    const { data: u } = await supabase.from('users').select('*').eq('telegram_id', state.telegramId).single();
+    if (u) state.user = u;
     showSuccess('Заявка на вывод создана');
     document.getElementById('withdraw-form').classList.add('hidden');
     document.getElementById('withdraw-amount').value = '';
+    loadWallet();
   });
 
   // ——— Profile ———
@@ -538,10 +639,114 @@
     const { data: u } = await supabase.from('users').select('*').eq('telegram_id', state.telegramId).single();
     if (u) state.user = u;
     const user = state.user;
-    document.getElementById('profile-total-profit').textContent = fmtAmount(user.total_profit) + ' ₽';
-    document.getElementById('profile-day-profit').textContent = fmtAmount(user.day_profit) + ' ₽';
-    document.getElementById('profile-month-profit').textContent = fmtAmount(user.month_profit) + ' ₽';
+    const total = parseFloat(user.total_profit) || 0;
+    const day = parseFloat(user.day_profit) || 0;
+    const week = parseFloat(user.week_profit) || 0;
+    const month = parseFloat(user.month_profit) || 0;
+    const record = (user.record_profit != null && user.record_profit !== '') ? parseFloat(user.record_profit) : total;
+    document.getElementById('profile-total-profit').textContent = fmtAmount(total) + ' $';
+    document.getElementById('profile-day-profit').textContent = fmtAmount(day) + ' $';
+    document.getElementById('profile-week-profit').textContent = fmtAmount(week) + ' $';
+    document.getElementById('profile-month-profit').textContent = fmtAmount(month) + ' $';
+    document.getElementById('profile-record-profit').textContent = fmtAmount(record) + ' $';
+    const { data: rankRows } = await supabase.from('users').select('telegram_id').eq('status', 'approved').order('total_profit', { ascending: false });
+    let place = '—';
+    if (rankRows?.length) {
+      const idx = rankRows.findIndex(r => String(r.telegram_id) === String(state.telegramId));
+      place = idx >= 0 ? `${idx + 1} из ${rankRows.length}` : `${rankRows.length} из ${rankRows.length}`;
+    }
+    const rankEl = document.getElementById('profile-rank');
+    if (rankEl) rankEl.textContent = place;
+    const { data: settingsRows } = await supabase.from('settings').select('key, value').in('key', ['about_text', 'chat_link', 'profits_channel_link', 'support_contact']);
+    const settings = {};
+    (settingsRows || []).forEach(r => { settings[r.key] = r.value || ''; });
+    const aboutEl = document.getElementById('profile-about');
+    if (aboutEl) aboutEl.textContent = settings.about_text || 'Дроп-сервис. Общая касса и условия работы.';
+    const linksEl = document.getElementById('profile-links');
+    if (linksEl) {
+      const parts = [];
+      if (settings.chat_link && settings.chat_link.trim()) {
+        parts.push('<a href="' + escapeHtml(settings.chat_link.trim()) + '" target="_blank" rel="noopener"><svg width="18" height="18"><use href="#icon-link"/></svg>Чат</a>');
+      }
+      if (settings.profits_channel_link && settings.profits_channel_link.trim()) {
+        parts.push('<a href="' + escapeHtml(settings.profits_channel_link.trim()) + '" target="_blank" rel="noopener"><svg width="18" height="18"><use href="#icon-link"/></svg>Канал профитов</a>');
+      }
+      if (settings.support_contact && settings.support_contact.trim()) {
+        const support = settings.support_contact.trim();
+        const href = support.startsWith('http') ? support : (support.startsWith('@') ? 'https://t.me/' + support.slice(1) : 'https://t.me/' + support);
+        parts.push('<a href="' + escapeHtml(href) + '" target="_blank" rel="noopener"><svg width="18" height="18"><use href="#icon-link"/></svg>Поддержка</a>');
+      }
+      linksEl.innerHTML = parts.length ? parts.join('') : '<p class="hint">Ссылки задаются в боте (админ).</p>';
+    }
+    const btn = document.getElementById('profile-become-merchant');
+    if (btn) {
+      if (user.status !== 'approved') {
+        btn.classList.add('hidden');
+      } else {
+        btn.classList.remove('hidden');
+        if (state.isMerchant) {
+          btn.innerHTML = '<svg class="btn-icon" width="20" height="20"><use href="#icon-merchant"/></svg>Вы уже мерчант';
+          btn.disabled = true;
+        } else {
+          btn.innerHTML = '<svg class="btn-icon" width="20" height="20"><use href="#icon-merchant"/></svg>Стать мерчантом';
+          btn.disabled = false;
+        }
+      }
+    }
   }
+
+  document.getElementById('profile-become-merchant')?.addEventListener('click', async () => {
+    if (state.user?.status !== 'approved') {
+      showToast('Доступно только одобренным пользователям', 'error');
+      return;
+    }
+    if (state.isMerchant) {
+      showToast('Вы уже мерчант', 'info');
+      return;
+    }
+    const { data: pending } = await supabase.from('merchant_applications').select('id').eq('telegram_id', state.telegramId).eq('status', 'pending').limit(1).maybeSingle();
+    if (pending) {
+      showToast('У вас уже есть заявка на рассмотрении', 'info');
+      return;
+    }
+    showPage('merchant-apply');
+  });
+
+  document.getElementById('merchant-apply-submit')?.addEventListener('click', async () => {
+    const volume = (document.getElementById('merchant-volume')?.value || '').trim();
+    const banks = (document.getElementById('merchant-banks')?.value || '').trim();
+    const country = (document.getElementById('merchant-country')?.value || '').trim();
+    const experience = (document.getElementById('merchant-experience')?.value || '').trim().slice(0, 500);
+    const guarantees = (document.getElementById('merchant-guarantees')?.value || '').trim().slice(0, 500);
+    const timeText = (document.getElementById('merchant-time')?.value || '').trim().slice(0, 300);
+    if (!volume || !banks || !country) {
+      showToast('Заполните объём, банки и страну', 'error');
+      return;
+    }
+    const tgUser = TgWebApp?.initDataUnsafe?.user;
+    const username = tgUser?.username ? String(tgUser.username) : '';
+    const fullName = [tgUser?.first_name, tgUser?.last_name].filter(Boolean).join(' ') || '';
+    const { error } = await supabase.from('merchant_applications').insert({
+      telegram_id: state.telegramId,
+      username,
+      full_name: fullName,
+      volume_text: volume,
+      banks_text: banks,
+      country_text: country,
+      experience_text: experience,
+      guarantees_text: guarantees,
+      time_text: timeText,
+      status: 'pending'
+    });
+    if (error) {
+      showToast(error.message || 'Ошибка отправки', 'error');
+      return;
+    }
+    showSuccess('Заявка отправлена');
+    showToast('Ожидайте решения в боте');
+    showPage('profile');
+    loadProfile();
+  });
 
   // ——— Navigation ———
   document.getElementById('bottom-nav')?.addEventListener('click', (e) => {
@@ -554,9 +759,9 @@
     if (item.dataset.page === 'profile') loadProfile();
   });
 
-  document.querySelectorAll('.page-header.with-back .back').forEach(btn => {
+  document.querySelectorAll('.screen-header.with-back .btn-back').forEach(btn => {
     btn.addEventListener('click', () => {
-      const header = btn.closest('.page-header.with-back');
+      const header = btn.closest('.screen-header.with-back');
       const back = header?.dataset.back || 'dashboard';
       showPage(back);
       if (back === 'requisites') loadCountries();
