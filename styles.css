@@ -1,0 +1,559 @@
+/* ===== CSS Variables: Telegram + Web3 Dark ===== */
+:root {
+  /* Telegram theme (fallback if not in TMA) */
+  --tg-theme-bg-color: #0d0d0d;
+  --tg-theme-text-color: #ffffff;
+  --tg-theme-hint-color: #8e8e93;
+  --tg-theme-link-color: #007aff;
+  --tg-theme-button-color: #007aff;
+  --tg-theme-button-text-color: #ffffff;
+  /* Web3 / ByBit-style */
+  --app-bg: #0a0a0f;
+  --app-surface: #12121a;
+  --app-surface-elevated: #1a1a24;
+  --app-border: #2a2a36;
+  --app-text: #e8e8ed;
+  --app-text-muted: #8c8c9e;
+  --app-accent: #6366f1;
+  --app-accent-hover: #818cf8;
+  --app-success: #22c55e;
+  --app-danger: #ef4444;
+  --app-warning: #f59e0b;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  --transition: 0.25s ease;
+  --nav-height: 64px;
+  --safe-bottom: env(safe-area-inset-bottom, 0);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--app-bg);
+  color: var(--app-text);
+  min-height: 100vh;
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  padding-bottom: calc(var(--nav-height) + var(--safe-bottom));
+}
+
+#app {
+  min-height: 100vh;
+  padding: 12px;
+  padding-top: max(12px, env(safe-area-inset-top));
+}
+
+/* ===== Pages (SPA) ===== */
+.page {
+  display: none;
+  animation: pageIn 0.3s ease;
+}
+
+.page.active {
+  display: block;
+}
+
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.page-header {
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.page-header.with-back .back {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  background: var(--app-surface-elevated);
+  border: 1px solid var(--app-border);
+  color: var(--app-text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.page-header .back::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-left: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+  margin-right: 2px;
+}
+
+.page-header h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+/* ===== Auth ===== */
+#page-auth {
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-card {
+  text-align: center;
+  max-width: 320px;
+}
+
+.auth-card .skeleton-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  margin: 0 auto 16px;
+}
+
+.auth-card h1 {
+  font-size: 1.5rem;
+  margin-bottom: 8px;
+}
+
+.auth-card p {
+  color: var(--app-text-muted);
+  font-size: 0.95rem;
+}
+
+.text-danger { color: var(--app-danger); }
+.text-muted { color: var(--app-text-muted); }
+.small { font-size: 0.85rem; }
+.hidden { display: none !important; }
+
+/* ===== Balance card ===== */
+.balance-card {
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.balance-card .label {
+  font-size: 0.85rem;
+  color: var(--app-text-muted);
+  margin-bottom: 4px;
+}
+
+.balance-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--app-success);
+}
+
+.balance-sub {
+  font-size: 0.95rem;
+  color: var(--app-text-muted);
+  margin-top: 4px;
+}
+
+/* ===== Buttons ===== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 20px;
+  border-radius: var(--radius-sm);
+  font-size: 1rem;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: background var(--transition), transform 0.15s ease;
+}
+
+.btn:active { transform: scale(0.98); }
+
+.btn-block {
+  width: 100%;
+}
+
+.btn-primary {
+  background: var(--app-accent);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--app-accent-hover);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--app-text);
+  border: 1px solid var(--app-border);
+}
+
+.btn-outline:hover {
+  background: var(--app-surface-elevated);
+}
+
+.quick-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.quick-actions .btn { margin-bottom: 0; }
+
+/* ===== Requisites ===== */
+.req-step { margin-top: 16px; }
+
+.card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.card-item {
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  cursor: pointer;
+  transition: border-color var(--transition), background var(--transition);
+}
+
+.card-item:hover {
+  background: var(--app-surface-elevated);
+  border-color: var(--app-accent);
+}
+
+.req-p2p { margin-top: 20px; }
+
+.requisite-detail {
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.requisite-detail .row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--app-border);
+}
+
+.requisite-detail .row:last-child { border-bottom: none; }
+
+.requisite-detail .copy-btn {
+  background: var(--app-surface-elevated);
+  border: 1px solid var(--app-border);
+  color: var(--app-accent);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+/* ===== Form ===== */
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.9rem;
+  color: var(--app-text-muted);
+  margin-bottom: 6px;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 14px 16px;
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: var(--radius-sm);
+  color: var(--app-text);
+  font-size: 1rem;
+}
+
+.form-group input::placeholder {
+  color: var(--app-text-muted);
+}
+
+/* ===== Deals ===== */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  background: var(--app-surface);
+  padding: 4px;
+  border-radius: var(--radius-sm);
+}
+
+.tab {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  background: transparent;
+  color: var(--app-text-muted);
+  font-size: 0.95rem;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all var(--transition);
+}
+
+.tab.active {
+  background: var(--app-surface-elevated);
+  color: var(--app-text);
+  font-weight: 500;
+}
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+.deal-list { display: flex; flex-direction: column; gap: 10px; }
+
+.deal-card {
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  cursor: pointer;
+  transition: border-color var(--transition);
+}
+
+.deal-card:hover { border-color: var(--app-accent); }
+
+.deal-card .deal-bank { font-weight: 600; margin-bottom: 4px; }
+.deal-card .deal-meta { font-size: 0.85rem; color: var(--app-text-muted); }
+.deal-card .deal-status {
+  margin-top: 8px;
+  font-size: 0.8rem;
+  padding: 4px 8px;
+  border-radius: 6px;
+  display: inline-block;
+}
+
+.deal-status.pending_merchants { background: rgba(245, 158, 11, 0.2); color: var(--app-warning); }
+.deal-status.taken { background: rgba(99, 102, 241, 0.2); color: var(--app-accent); }
+.deal-status.waiting_payment { background: rgba(34, 197, 94, 0.2); color: var(--app-success); }
+.deal-status.completed { background: rgba(34, 197, 94, 0.15); color: var(--app-success); }
+.deal-status.cancelled { background: rgba(239, 68, 68, 0.2); color: var(--app-danger); }
+
+.deal-detail {
+  margin-top: 16px;
+  padding: 20px;
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: var(--radius);
+}
+
+.deal-detail .detail-row { margin-bottom: 12px; }
+.deal-detail .detail-row .label { color: var(--app-text-muted); font-size: 0.85rem; }
+.deal-detail .detail-actions { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--app-text-muted);
+}
+
+/* ===== Upload check ===== */
+.upload-zone {
+  border: 2px dashed var(--app-border);
+  border-radius: var(--radius);
+  padding: 40px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color var(--transition), background var(--transition);
+  margin-bottom: 12px;
+}
+
+.upload-zone:hover,
+.upload-zone.dragover {
+  border-color: var(--app-accent);
+  background: rgba(99, 102, 241, 0.05);
+}
+
+.upload-zone p { color: var(--app-text-muted); }
+
+#upload-submit { margin-top: 16px; }
+
+/* ===== Profile stats ===== */
+.profile-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.profile-stats .stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: var(--radius-sm);
+}
+
+.profile-stats .stat .label { color: var(--app-text-muted); font-size: 0.9rem; }
+
+/* ===== Bottom Nav ===== */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: calc(var(--nav-height) + var(--safe-bottom));
+  padding-bottom: var(--safe-bottom);
+  background: var(--app-surface);
+  border-top: 1px solid var(--app-border);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 100;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 16px;
+  background: none;
+  border: none;
+  color: var(--app-text-muted);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: color var(--transition);
+}
+
+.nav-item.active { color: var(--app-accent); }
+
+.nav-icon { font-size: 1.4rem; }
+
+/* ===== Skeleton ===== */
+.skeleton {
+  background: linear-gradient(90deg, var(--app-surface-elevated) 25%, var(--app-border) 50%, var(--app-surface-elevated) 75%);
+  background-size: 200% 100%;
+  animation: skeleton 1.2s ease-in-out infinite;
+  border-radius: var(--radius-sm);
+}
+
+@keyframes skeleton {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeleton-text { height: 16px; margin-bottom: 8px; }
+.skeleton-text:last-child { width: 60%; }
+
+/* ===== Toast ===== */
+#toast-container {
+  position: fixed;
+  top: max(16px, env(safe-area-inset-top));
+  left: 16px;
+  right: 16px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast {
+  padding: 14px 18px;
+  background: var(--app-surface-elevated);
+  border: 1px solid var(--app-border);
+  border-radius: var(--radius-sm);
+  color: var(--app-text);
+  font-size: 0.95rem;
+  box-shadow: var(--shadow);
+  animation: toastIn 0.3s ease;
+}
+
+.toast.error { border-left: 4px solid var(--app-danger); }
+.toast.success { border-left: 4px solid var(--app-success); }
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== Success overlay ===== */
+.success-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.success-check {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 16px;
+}
+
+.success-circle-bg {
+  fill: none;
+  stroke: var(--app-success);
+  stroke-width: 2;
+}
+
+.success-check-path {
+  stroke: var(--app-success);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  animation: successDraw 0.5s ease 0.2s forwards;
+}
+
+.success-circle-bg {
+  stroke-dasharray: 157;
+  stroke-dashoffset: 157;
+  animation: successCircle 0.5s ease forwards;
+}
+
+@keyframes successCircle {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes successDraw {
+  to { stroke-dashoffset: 0; }
+}
+
+.success-overlay p {
+  color: var(--app-text);
+  font-size: 1.1rem;
+}
+
+/* Fix typo in .small */
+.small { font-size: 0.85rem; }
+.detail-row .label { font-size: 0.85rem; }
+.stat .label { font-size: 0.9rem; }
+.toast { font-size: 0.95rem; }
+.success-overlay p { font-size: 1.1rem; }

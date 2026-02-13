@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Drop Service</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Auth / Ожидание одобрения -->
+    <section id="page-auth" class="page active">
+      <div class="auth-card">
+        <div class="skeleton skeleton-avatar"></div>
+        <h1>Drop Service</h1>
+        <p id="auth-message">Проверяем доступ…</p>
+        <div id="auth-pending" class="hidden">
+          <p class="text-muted">Ваша заявка на рассмотрении. Ожидайте одобрения в боте.</p>
+        </div>
+        <div id="auth-rejected" class="hidden">
+          <p class="text-danger">Доступ отклонён.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Главная (Dashboard) -->
+    <section id="page-dashboard" class="page">
+      <div class="page-header">
+        <h2>Главная</h2>
+      </div>
+      <div class="balance-card">
+        <p class="label">Баланс</p>
+        <p id="balance-usd" class="balance-value">— $</p>
+        <p id="balance-rub" class="balance-sub">— ₽</p>
+      </div>
+      <div class="quick-actions">
+        <button type="button" class="btn btn-primary btn-block" data-action="requisites">
+          📥 Получить реквизиты
+        </button>
+        <button type="button" class="btn btn-outline btn-block" data-action="send-check">
+          📤 Отправить чек
+        </button>
+      </div>
+    </section>
+
+    <!-- Реквизиты (страна → банк → статика или P2P) -->
+    <section id="page-requisites" class="page">
+      <div class="page-header with-back" data-back="dashboard">
+        <button type="button" class="btn-icon back" aria-label="Назад"></button>
+        <h2>Реквизиты</h2>
+      </div>
+      <div id="req-step-country" class="req-step">
+        <p class="label">Страна</p>
+        <div id="req-countries" class="card-list"></div>
+        <div class="req-p2p">
+          <button type="button" class="btn btn-outline btn-block" id="req-p2p-btn">📋 Реквизиты по запросу (P2P)</button>
+        </div>
+      </div>
+      <div id="req-step-bank" class="req-step hidden">
+        <p class="label">Банк</p>
+        <div id="req-banks" class="card-list"></div>
+      </div>
+      <div id="req-step-detail" class="req-step hidden">
+        <div id="req-detail-card" class="requisite-detail"></div>
+        <button type="button" class="btn btn-primary btn-block" id="req-btn-paid">Я оплатил (загрузить чек)</button>
+      </div>
+      <!-- P2P форма -->
+      <div id="req-p2p-form" class="req-step hidden">
+        <div class="form-group">
+          <label>Сумма, ₽</label>
+          <input type="number" id="p2p-amount" placeholder="5000" min="1" step="1">
+        </div>
+        <div class="form-group">
+          <label>Время на оплату, мин</label>
+          <input type="number" id="p2p-time" placeholder="20" min="1" max="1440" value="20">
+        </div>
+        <button type="button" class="btn btn-primary btn-block" id="p2p-submit">Создать заявку</button>
+      </div>
+    </section>
+
+    <!-- Сделки: Мои заявки + Биржа (мерчант) -->
+    <section id="page-deals" class="page">
+      <div class="page-header">
+        <h2>Сделки</h2>
+      </div>
+      <div class="tabs">
+        <button type="button" class="tab active" data-tab="my-deals">Мои заявки</button>
+        <button type="button" class="tab" data-tab="exchange">Биржа</button>
+      </div>
+      <div id="tab-my-deals" class="tab-panel active">
+        <div id="my-deals-list" class="deal-list"></div>
+        <div id="my-deals-empty" class="empty-state hidden">Нет заявок</div>
+      </div>
+      <div id="tab-exchange" class="tab-panel">
+        <div id="exchange-list" class="deal-list"></div>
+        <div id="exchange-empty" class="empty-state hidden">Нет доступных заявок</div>
+      </div>
+      <!-- Детали сделки -->
+      <div id="deal-detail" class="deal-detail hidden"></div>
+    </section>
+
+    <!-- Загрузка чека -->
+    <section id="page-upload-check" class="page">
+      <div class="page-header with-back" data-back="dashboard">
+        <button type="button" class="btn-icon back" aria-label="Назад"></button>
+        <h2>Отправить чек</h2>
+      </div>
+      <div class="upload-zone" id="upload-zone">
+        <input type="file" id="check-file" accept="image/*" class="hidden">
+        <p>Нажмите или перетащите фото чека</p>
+      </div>
+      <p class="text-muted small">Скрин или фото перевода</p>
+      <button type="button" class="btn btn-primary btn-block hidden" id="upload-submit">Отправить</button>
+    </section>
+
+    <!-- Кошелёк (баланс + вывод) -->
+    <section id="page-wallet" class="page">
+      <div class="page-header">
+        <h2>Кошелёк</h2>
+      </div>
+      <div class="balance-card">
+        <p id="wallet-balance-usd" class="balance-value">— $</p>
+        <p id="wallet-balance-rub" class="balance-sub">— ₽</p>
+      </div>
+      <button type="button" class="btn btn-primary btn-block" id="wallet-withdraw">Вывести средства</button>
+      <div id="withdraw-form" class="hidden">
+        <div class="form-group">
+          <label>Сумма, USD</label>
+          <input type="number" id="withdraw-amount" placeholder="10" min="0.01" step="0.01">
+        </div>
+        <button type="button" class="btn btn-primary btn-block" id="withdraw-submit">Подать заявку</button>
+      </div>
+    </section>
+
+    <!-- Профиль -->
+    <section id="page-profile" class="page">
+      <div class="page-header">
+        <h2>Профиль</h2>
+      </div>
+      <div class="profile-stats">
+        <div class="stat">
+          <span class="label">Всего профит</span>
+          <span id="profile-total-profit">— ₽</span>
+        </div>
+        <div class="stat">
+          <span class="label">За день</span>
+          <span id="profile-day-profit">— ₽</span>
+        </div>
+        <div class="stat">
+          <span class="label">За месяц</span>
+          <span id="profile-month-profit">— ₽</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Bottom Navigation -->
+    <nav id="bottom-nav" class="bottom-nav hidden">
+      <button type="button" class="nav-item active" data-page="dashboard" aria-label="Главная">
+        <span class="nav-icon">🏠</span>
+        <span>Главная</span>
+      </button>
+      <button type="button" class="nav-item" data-page="deals" aria-label="Сделки">
+        <span class="nav-icon">📋</span>
+        <span>Сделки</span>
+      </button>
+      <button type="button" class="nav-item" data-page="wallet" aria-label="Кошелёк">
+        <span class="nav-icon">💰</span>
+        <span>Кошелёк</span>
+      </button>
+      <button type="button" class="nav-item" data-page="profile" aria-label="Профиль">
+        <span class="nav-icon">👤</span>
+        <span>Профиль</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- Toast container -->
+  <div id="toast-container"></div>
+
+  <!-- Success overlay (галочка) -->
+  <div id="success-overlay" class="success-overlay hidden">
+    <div class="success-check">
+      <svg viewBox="0 0 52 52" class="success-circle">
+        <circle class="success-circle-bg" cx="26" cy="26" r="25"/>
+        <path class="success-check-path" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+      </svg>
+    </div>
+    <p id="success-message">Готово</p>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
