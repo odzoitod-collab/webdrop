@@ -64,6 +64,10 @@
             <svg class="action-icon" width="24" height="24"><use href="#icon-download"/></svg>
             <span>Реквизиты</span>
           </button>
+          <button type="button" class="action-card" data-action="p2p">
+            <svg class="action-icon" width="24" height="24"><use href="#icon-p2p"/></svg>
+            <span>По запросу (P2P)</span>
+          </button>
           <button type="button" class="action-card" data-action="send-check">
             <svg class="action-icon" width="24" height="24"><use href="#icon-upload"/></svg>
             <span>Отправить чек</span>
@@ -103,6 +107,15 @@
         <div id="req-p2p-form" class="req-step hidden">
           <p class="block-caption">Заявка P2P</p>
           <div class="form-group">
+            <label>Страна</label>
+            <div id="p2p-countries" class="card-list"></div>
+          </div>
+          <div class="form-group p2p-bank-wrap">
+            <label>Желаемый банк</label>
+            <div id="p2p-banks" class="card-list"></div>
+            <input type="text" id="p2p-bank-custom" placeholder="Или введите название банка" maxlength="200">
+          </div>
+          <div class="form-group">
             <label>Сумма, ₽</label>
             <input type="number" id="p2p-amount" placeholder="5000" min="1" step="1">
           </div>
@@ -121,23 +134,11 @@
         <h1 class="screen-title">Сделки</h1>
       </header>
       <div class="screen-content">
-        <div id="deals-tabs-wrap" class="tabs-wrap">
-          <button type="button" class="tab-btn active" data-tab="my-deals">Мои заявки</button>
-          <button type="button" class="tab-btn tab-exchange" data-tab="exchange">Биржа</button>
-        </div>
-        <div id="tab-my-deals" class="tab-panel active">
-          <div id="my-deals-list" class="deal-list"></div>
-          <div id="my-deals-empty" class="empty-state hidden">
-            <p class="empty-title">Пока заявок нет</p>
-            <p class="empty-hint">Создайте заявку: Главная → Реквизиты → По запросу (P2P).</p>
-          </div>
-        </div>
-        <div id="tab-exchange" class="tab-panel">
-          <div id="exchange-list" class="deal-list"></div>
-          <div id="exchange-empty" class="empty-state hidden">
-            <p class="empty-title">Нет доступных заявок</p>
-            <p class="empty-hint">Новые заявки появятся здесь, когда воркеры создадут их с сайта.</p>
-          </div>
+        <p class="block-caption">Мои заявки</p>
+        <div id="my-deals-list" class="deal-list"></div>
+        <div id="my-deals-empty" class="empty-state hidden">
+          <p class="empty-title">Пока заявок нет</p>
+          <p class="empty-hint">Создайте заявку: Главная → Реквизиты → По запросу (P2P).</p>
         </div>
         <div id="deal-detail" class="deal-detail hidden"></div>
       </div>

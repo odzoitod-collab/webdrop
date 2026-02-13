@@ -278,7 +278,10 @@ body { padding: 0; }
   color: var(--tg-accent);
   font-weight: 500;
 }
+.card-item.selected { border-color: var(--tg-accent); background: rgba(0,136,204,.06); }
 .card-item-icon { flex-shrink: 0; color: var(--tg-accent); }
+.p2p-bank-wrap .card-list { margin-bottom: 10px; }
+.p2p-bank-wrap input { margin-top: 0; }
 .requisite-detail .copy-btn { display: inline-flex; align-items: center; gap: 6px; }
 
 .requisite-detail .row {
@@ -393,6 +396,14 @@ body { padding: 0; }
 }
 .deal-detail .detail-row { margin-bottom: 12px; }
 .deal-detail .detail-row .label { color: var(--tg-text-secondary); font-size: 0.85rem; }
+.deal-detail .detail-section { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--tg-border); }
+.deal-detail .detail-section .block-caption { margin-bottom: 10px; }
+.deal-detail .copy-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px; margin-left: 8px;
+  background: var(--tg-surface-hover); border: none; border-radius: var(--radius-xs);
+  color: var(--tg-accent); font-size: 0.85rem; font-weight: 500; cursor: pointer;
+}
 .deal-detail .detail-actions { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
 
 .empty-state {

@@ -63,23 +63,7 @@
     updateDealsUI();
   }
 
-  function updateDealsUI() {
-    const exchangeTab = document.querySelector('.tab-btn.tab-exchange');
-    const tabsWrap = document.getElementById('deals-tabs-wrap');
-    if (exchangeTab && tabsWrap) {
-      if (state.isMerchant) {
-        exchangeTab.classList.remove('hidden-merchant');
-      } else {
-        exchangeTab.classList.add('hidden-merchant');
-        const myTab = document.querySelector('.tab-btn[data-tab="my-deals"]');
-        if (myTab && !myTab.classList.contains('active')) {
-          myTab.classList.add('active');
-          document.getElementById('tab-my-deals')?.classList.add('active');
-          document.getElementById('tab-exchange')?.classList.remove('active');
-        }
-      }
-    }
-  }
+  function updateDealsUI() {}
 
   function setBackHandler(selector, getBackPage) {
     document.querySelectorAll(selector).forEach(el => {
@@ -160,6 +144,19 @@
   document.querySelector('[data-action="requisites"]')?.addEventListener('click', () => {
     showPage('requisites');
     loadCountries();
+  });
+  document.querySelector('[data-action="p2p"]')?.addEventListener('click', () => {
+    showPage('requisites');
+    document.getElementById('req-step-country').classList.add('hidden');
+    document.getElementById('req-step-bank').classList.add('hidden');
+    document.getElementById('req-step-detail').classList.add('hidden');
+    document.getElementById('req-p2p-form').classList.remove('hidden');
+    state.p2pCountryId = null;
+    state.p2pCountryName = null;
+    state.p2pBankName = null;
+    document.getElementById('p2p-bank-custom').value = '';
+    loadP2pCountries();
+    document.getElementById('p2p-banks').innerHTML = '';
   });
   function resetUploadCheckPage() {
     state.pendingCheckFile = null;
@@ -267,6 +264,76 @@
     document.getElementById('req-step-bank').classList.add('hidden');
     document.getElementById('req-step-detail').classList.add('hidden');
     document.getElementById('req-p2p-form').classList.remove('hidden');
+    state.p2pCountryId = null;
+    state.p2pCountryName = null;
+    state.p2pBankName = null;
+    document.getElementById('p2p-bank-custom').value = '';
+    loadP2pCountries();
+    document.getElementById('p2p-banks').innerHTML = '';
+  });
+
+  async function loadP2pCountries() {
+    const container = document.getElementById('p2p-countries');
+    container.innerHTML = '<div class="skeleton skeleton-text"></div>';
+    const { data, error } = await supabase.from('countries').select('id, name').order('name');
+    container.innerHTML = '';
+    if (error) {
+      showToast(error.message, 'error');
+      return;
+    }
+    (data || []).forEach(c => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'card-item';
+      btn.innerHTML = '<svg class="card-item-icon" width="20" height="20"><use href="#icon-globe"/></svg><span>' + escapeHtml(c.name) + '</span>';
+      btn.dataset.countryId = c.id;
+      btn.dataset.countryName = c.name;
+      btn.addEventListener('click', () => selectP2pCountry(c.id, c.name));
+      container.appendChild(btn);
+    });
+  }
+
+  function selectP2pCountry(countryId, countryName) {
+    state.p2pCountryId = countryId;
+    state.p2pCountryName = countryName;
+    const container = document.getElementById('p2p-banks');
+    container.innerHTML = '<div class="skeleton skeleton-text"></div>';
+    supabase.from('banks').select('id, name').eq('country_id', countryId).order('name').then(({ data, error }) => {
+      container.innerHTML = '';
+      if (error) {
+        showToast(error.message, 'error');
+        return;
+      }
+      (data || []).forEach(b => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'card-item';
+        btn.innerHTML = '<svg class="card-item-icon" width="20" height="20"><use href="#icon-bank"/></svg><span>' + escapeHtml(b.name) + '</span>';
+        btn.addEventListener('click', () => {
+          state.p2pBankName = b.name;
+          document.getElementById('p2p-bank-custom').value = '';
+          container.querySelectorAll('.card-item').forEach(el => el.classList.remove('selected'));
+          btn.classList.add('selected');
+        });
+        container.appendChild(btn);
+      });
+      const anyBtn = document.createElement('button');
+      anyBtn.type = 'button';
+      anyBtn.className = 'card-item card-item-action';
+      anyBtn.innerHTML = '<svg class="card-item-icon" width="20" height="20"><use href="#icon-p2p"/></svg><span>По запросу</span>';
+      anyBtn.addEventListener('click', () => {
+        state.p2pBankName = 'По запросу';
+        document.getElementById('p2p-bank-custom').value = '';
+        container.querySelectorAll('.card-item').forEach(el => el.classList.remove('selected'));
+        anyBtn.classList.add('selected');
+      });
+      container.appendChild(anyBtn);
+    });
+  }
+
+  document.getElementById('p2p-bank-custom')?.addEventListener('input', () => {
+    state.p2pBankName = null;
+    document.getElementById('p2p-banks')?.querySelectorAll('.card-item').forEach(el => el.classList.remove('selected'));
   });
 
   document.getElementById('p2p-submit')?.addEventListener('click', () => createDeal());
@@ -278,13 +345,16 @@
       showToast('Укажите сумму и время', 'error');
       return;
     }
-    const countryId = state.selectedCountryId || null;
-    const countryName = state.selectedCountryName || 'По запросу';
-    const bankName = 'По запросу';
+    if (!state.p2pCountryId || !state.p2pCountryName) {
+      showToast('Выберите страну', 'error');
+      return;
+    }
+    const customBank = (document.getElementById('p2p-bank-custom')?.value || '').trim();
+    const bankName = customBank || state.p2pBankName || 'По запросу';
     const { data, error } = await supabase.from('deals').insert({
       user_telegram_id: state.telegramId,
-      country_id: countryId,
-      country_name: countryName,
+      country_id: state.p2pCountryId,
+      country_name: state.p2pCountryName,
       bank_name: bankName,
       amount_rub: amount,
       time_minutes: time,
@@ -301,10 +371,9 @@
     loadDeals();
   }
 
-  // ——— Deals ———
+  // ——— Deals (только мои заявки; брать сделки — только в боте) ———
   function loadDeals() {
     loadMyDeals();
-    if (state.isMerchant) loadExchange();
   }
 
   async function loadMyDeals() {
@@ -350,57 +419,6 @@
     });
   }
 
-  async function loadExchange() {
-    const list = document.getElementById('exchange-list');
-    const empty = document.getElementById('exchange-empty');
-    list.innerHTML = '';
-    const { data, error } = await supabase
-      .from('deals')
-      .select('*')
-      .eq('status', 'pending_merchants')
-      .order('created_at', { ascending: false })
-      .limit(20);
-    if (error || !data?.length) {
-      empty.classList.remove('hidden');
-      return;
-    }
-    empty.classList.add('hidden');
-    data.forEach(d => {
-      const card = document.createElement('div');
-      card.className = 'deal-card';
-      card.innerHTML = `
-        <div class="deal-bank">${escapeHtml(d.bank_name)} — ${fmtAmount(d.amount_rub, 0)} ₽</div>
-        <div class="deal-meta">${d.time_minutes} мин</div>
-        <button type="button" class="btn btn-primary" style="margin-top:8px" data-deal-id="${d.id}">Взять в работу</button>
-      `;
-      card.querySelector('[data-deal-id]').addEventListener('click', (e) => {
-        e.stopPropagation();
-        takeDeal(d.id, d.time_minutes);
-      });
-      list.appendChild(card);
-    });
-  }
-
-  async function takeDeal(dealId, timeMinutes) {
-    const timeMin = timeMinutes != null ? parseInt(timeMinutes, 10) : 20;
-    const validMinutes = timeMin >= 1 && timeMin <= 1440 ? timeMin : 20;
-    const expiresAt = new Date(Date.now() + validMinutes * 60 * 1000).toISOString();
-    const { error } = await supabase.from('deals').update({
-      merchant_telegram_id: state.telegramId,
-      status: 'taken',
-      timer_until: expiresAt,
-      updated_at: new Date().toISOString()
-    }).eq('id', dealId).eq('status', 'pending_merchants');
-    if (error) {
-      showToast(error.message || 'Ошибка при взятии сделки', 'error');
-      return;
-    }
-    showSuccess('Заявка взята');
-    showToast('Отправьте реквизиты мерчанту в боте.');
-    loadExchange();
-    loadMyDeals();
-  }
-
   function showDealDetail(deal, from) {
     state.currentDealId = deal.id;
     const panel = document.getElementById('deal-detail');
@@ -413,16 +431,29 @@
       completed: 'Завершена',
       cancelled: 'Отменена'
     };
+    const hasRequisites = deal.recipient_name || deal.card_number;
+    const cardNum = (deal.card_number || '').replace(/\s/g, '');
+    const displayCard = cardNum.length >= 4 ? cardNum.replace(/(.{4})/g, '$1 ').trim() : (deal.card_number || '');
+    let reqBlock = '';
+    if (hasRequisites) {
+      reqBlock = `
+        <div class="detail-section">
+          <p class="block-caption">Реквизиты для оплаты</p>
+          ${deal.recipient_name ? `<div class="detail-row"><span class="label">Получатель</span> <strong>${escapeHtml(deal.recipient_name)}</strong></div>` : ''}
+          ${deal.card_number ? `<div class="detail-row"><span class="label">Карта</span> <code>${escapeHtml(displayCard)}</code> <button type="button" class="copy-btn deal-copy-card" data-copy="${escapeHtml(cardNum)}">Копировать</button></div>` : ''}
+        </div>
+      `;
+    }
     let actions = '';
     if (from === 'my' && (deal.status === 'waiting_payment' || deal.status === 'requisites_sent')) {
-      actions = `<button type="button" class="btn btn-primary btn-block" id="deal-upload-check">Загрузить чек</button>`;
+      actions = `<button type="button" class="btn btn-primary btn-block" id="deal-upload-check">Прикрепить чек</button>`;
     }
     panel.innerHTML = `
+      <div class="detail-row"><span class="label">Страна</span> ${escapeHtml(deal.country_name || '—')}</div>
       <div class="detail-row"><span class="label">Банк</span> ${escapeHtml(deal.bank_name)}</div>
       <div class="detail-row"><span class="label">Сумма</span> ${fmtAmount(deal.amount_rub, 0)} ₽</div>
       <div class="detail-row"><span class="label">Статус</span> ${statusLabels[deal.status] || deal.status}</div>
-      ${deal.recipient_name ? `<div class="detail-row"><span class="label">Получатель</span> ${escapeHtml(deal.recipient_name)}</div>` : ''}
-      ${deal.card_number ? `<div class="detail-row"><span class="label">Карта</span> <code>${escapeHtml(deal.card_number)}</code></div>` : ''}
+      ${reqBlock}
       <div class="detail-actions">
         ${actions}
         <button type="button" class="btn btn-outline btn-block back-deal-detail">Назад</button>
@@ -432,24 +463,18 @@
     panel.querySelector('.back-deal-detail')?.addEventListener('click', () => {
       panel.classList.add('hidden');
     });
+    panel.querySelectorAll('.deal-copy-card').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const val = btn.dataset.copy;
+        if (val && navigator.clipboard) navigator.clipboard.writeText(val).then(() => showToast('Скопировано'));
+      });
+    });
     panel.querySelector('#deal-upload-check')?.addEventListener('click', () => {
       state.uploadContext = { type: 'deal', requisiteId: null, dealId: deal.id };
       showPage('upload-check', 'deals');
       resetUploadCheckPage();
     });
   }
-
-  document.querySelectorAll('.tab-btn').forEach(tab => {
-    tab.addEventListener('click', () => {
-      if (tab.classList.contains('hidden-merchant')) return;
-      document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-      tab.classList.add('active');
-      const id = tab.dataset.tab;
-      document.getElementById('tab-' + id)?.classList.add('active');
-      if (id === 'exchange') loadExchange();
-    });
-  });
 
   // ——— Upload check ———
   const uploadZone = document.getElementById('upload-zone');
@@ -537,8 +562,9 @@
       row.requisite_id = ctx.requisiteId;
       row.deal_id = null;
     } else {
-      showToast('Ошибка: не указан контекст чека', 'error');
-      return;
+      // Одиночная загрузка (Главная → Отправить чек): без сделки и реквизита — чек уйдёт в канал и админам
+      row.deal_id = null;
+      row.requisite_id = null;
     }
     const { error: insertErr } = await supabase.from('checks').insert(row);
     if (insertErr) {
