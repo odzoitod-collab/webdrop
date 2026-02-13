@@ -85,17 +85,26 @@
         <h1 class="screen-title">Реквизиты</h1>
       </header>
       <div class="screen-content">
-        <div id="req-step-country" class="req-step">
+        <div id="req-step-choose" class="req-step">
+          <p class="block-caption">Как получить реквизиты</p>
+          <button type="button" class="card-item req-option-card" id="req-by-country-btn">
+            <svg class="card-item-icon" width="24" height="24"><use href="#icon-globe"/></svg>
+            <span><strong>По странам</strong><br><small class="text-muted">Страна → банк → реквизиты из базы</small></span>
+          </button>
+          <button type="button" class="card-item req-option-card" id="req-p2p-btn">
+            <svg class="card-item-icon" width="24" height="24"><use href="#icon-p2p"/></svg>
+            <span><strong>По запросу (P2P)</strong><br><small class="text-muted">Сумма, страна, банк, время → заявка мерчантам</small></span>
+          </button>
+        </div>
+        <div id="req-step-country" class="req-step hidden">
           <p class="block-caption">Страна</p>
           <div id="req-countries" class="card-list"></div>
-          <button type="button" class="card-item card-item-action" id="req-p2p-btn">
-            <svg class="card-item-icon" width="20" height="20"><use href="#icon-p2p"/></svg>
-            <span>По запросу (P2P)</span>
-          </button>
+          <button type="button" class="btn btn-ghost btn-block req-back-to-choose">← К выбору</button>
         </div>
         <div id="req-step-bank" class="req-step hidden">
           <p class="block-caption">Банк</p>
           <div id="req-banks" class="card-list"></div>
+          <button type="button" class="btn btn-ghost btn-block req-back-to-country">← К странам</button>
         </div>
         <div id="req-step-detail" class="req-step hidden">
           <div id="req-detail-card" class="requisite-detail card"></div>
@@ -311,6 +320,15 @@
       </svg>
     </div>
     <p id="success-message">Готово</p>
+  </div>
+
+  <div id="deal-req-modal" class="modal-overlay hidden" aria-hidden="true">
+    <div class="modal-backdrop" data-close="deal-req-modal"></div>
+    <div class="modal-card card">
+      <p class="block-caption">Реквизиты для оплаты</p>
+      <div id="deal-req-modal-body"></div>
+      <button type="button" class="btn btn-ghost btn-block modal-close-btn" data-close="deal-req-modal">Назад</button>
+    </div>
   </div>
 
   <script src="config.js"></script>

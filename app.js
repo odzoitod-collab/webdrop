@@ -58,6 +58,7 @@
       const header = document.querySelector('#page-upload-check .screen-header.with-back');
       if (header) header.dataset.back = backData || 'dashboard';
     }
+    if (id === 'requisites') showRequisitesChoiceStep();
     if (id === 'wallet') loadWallet();
     if (id === 'deals') loadDeals();
     updateDealsUI();
@@ -141,12 +142,49 @@
     if (rateEl) rateEl.textContent = '1 $ = ' + fmtAmount(state.usdRate, 2) + ' ₽';
   }
 
+  function showRequisitesChoiceStep() {
+    document.getElementById('req-step-choose').classList.remove('hidden');
+    document.getElementById('req-step-country').classList.add('hidden');
+    document.getElementById('req-step-bank').classList.add('hidden');
+    document.getElementById('req-step-detail').classList.add('hidden');
+    document.getElementById('req-p2p-form').classList.add('hidden');
+  }
+
+  function requisitesBack() {
+    if (!document.getElementById('page-requisites').classList.contains('active')) return false;
+    if (!document.getElementById('req-step-choose').classList.contains('hidden')) {
+      showPage('dashboard');
+      return true;
+    }
+    if (!document.getElementById('req-p2p-form').classList.contains('hidden')) {
+      showRequisitesChoiceStep();
+      return true;
+    }
+    if (!document.getElementById('req-step-country').classList.contains('hidden')) {
+      showRequisitesChoiceStep();
+      return true;
+    }
+    if (!document.getElementById('req-step-bank').classList.contains('hidden')) {
+      document.getElementById('req-step-bank').classList.add('hidden');
+      document.getElementById('req-step-country').classList.remove('hidden');
+      return true;
+    }
+    if (!document.getElementById('req-step-detail').classList.contains('hidden')) {
+      document.getElementById('req-step-detail').classList.add('hidden');
+      document.getElementById('req-step-bank').classList.remove('hidden');
+      return true;
+    }
+    return false;
+  }
+
   document.querySelector('[data-action="requisites"]')?.addEventListener('click', () => {
     showPage('requisites');
-    loadCountries();
+    showRequisitesChoiceStep();
   });
   document.querySelector('[data-action="p2p"]')?.addEventListener('click', () => {
     showPage('requisites');
+    showRequisitesChoiceStep();
+    document.getElementById('req-step-choose').classList.add('hidden');
     document.getElementById('req-step-country').classList.add('hidden');
     document.getElementById('req-step-bank').classList.add('hidden');
     document.getElementById('req-step-detail').classList.add('hidden');
@@ -176,7 +214,19 @@
   });
 
   // ——— Requisites ———
+  document.getElementById('req-by-country-btn')?.addEventListener('click', () => {
+    document.getElementById('req-step-choose').classList.add('hidden');
+    loadCountries();
+  });
+
+  document.querySelector('.req-back-to-choose')?.addEventListener('click', showRequisitesChoiceStep);
+  document.querySelector('.req-back-to-country')?.addEventListener('click', () => {
+    document.getElementById('req-step-bank').classList.add('hidden');
+    document.getElementById('req-step-country').classList.remove('hidden');
+  });
+
   async function loadCountries() {
+    document.getElementById('req-step-choose').classList.add('hidden');
     document.getElementById('req-step-country').classList.remove('hidden');
     document.getElementById('req-step-bank').classList.add('hidden');
     document.getElementById('req-step-detail').classList.add('hidden');
@@ -260,6 +310,7 @@
   });
 
   document.getElementById('req-p2p-btn')?.addEventListener('click', () => {
+    document.getElementById('req-step-choose').classList.add('hidden');
     document.getElementById('req-step-country').classList.add('hidden');
     document.getElementById('req-step-bank').classList.add('hidden');
     document.getElementById('req-step-detail').classList.add('hidden');
@@ -436,13 +487,7 @@
     const displayCard = cardNum.length >= 4 ? cardNum.replace(/(.{4})/g, '$1 ').trim() : (deal.card_number || '');
     let reqBlock = '';
     if (hasRequisites) {
-      reqBlock = `
-        <div class="detail-section">
-          <p class="block-caption">Реквизиты для оплаты</p>
-          ${deal.recipient_name ? `<div class="detail-row"><span class="label">Получатель</span> <strong>${escapeHtml(deal.recipient_name)}</strong></div>` : ''}
-          ${deal.card_number ? `<div class="detail-row"><span class="label">Карта</span> <code>${escapeHtml(displayCard)}</code> <button type="button" class="copy-btn deal-copy-card" data-copy="${escapeHtml(cardNum)}">Копировать</button></div>` : ''}
-        </div>
-      `;
+      reqBlock = `<button type="button" class="btn btn-outline btn-block" id="deal-show-req-btn">Реквизиты для оплаты</button>`;
     }
     let actions = '';
     if (from === 'my' && (deal.status === 'waiting_payment' || deal.status === 'requisites_sent')) {
@@ -463,11 +508,8 @@
     panel.querySelector('.back-deal-detail')?.addEventListener('click', () => {
       panel.classList.add('hidden');
     });
-    panel.querySelectorAll('.deal-copy-card').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const val = btn.dataset.copy;
-        if (val && navigator.clipboard) navigator.clipboard.writeText(val).then(() => showToast('Скопировано'));
-      });
+    panel.querySelector('#deal-show-req-btn')?.addEventListener('click', () => {
+      openRequisitesModal(deal);
     });
     panel.querySelector('#deal-upload-check')?.addEventListener('click', () => {
       state.uploadContext = { type: 'deal', requisiteId: null, dealId: deal.id };
@@ -475,6 +517,38 @@
       resetUploadCheckPage();
     });
   }
+
+  function openRequisitesModal(deal) {
+    const modal = document.getElementById('deal-req-modal');
+    const body = document.getElementById('deal-req-modal-body');
+    if (!modal || !body) return;
+    const cardNum = (deal.card_number || '').replace(/\s/g, '');
+    const displayCard = cardNum.length >= 4 ? cardNum.replace(/(.{4})/g, '$1 ').trim() : (deal.card_number || '');
+    body.innerHTML = `
+      ${deal.recipient_name ? `<div class="detail-row"><span class="label">Получатель</span> <strong>${escapeHtml(deal.recipient_name)}</strong></div>` : ''}
+      ${deal.card_number ? `<div class="detail-row"><span class="label">Карта</span> <code>${escapeHtml(displayCard)}</code> <button type="button" class="copy-btn deal-req-modal-copy" data-copy="${escapeHtml(cardNum)}">Копировать</button></div>` : ''}
+    `;
+    body.querySelectorAll('.deal-req-modal-copy').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const val = btn.dataset.copy;
+        if (val && navigator.clipboard) navigator.clipboard.writeText(val).then(() => showToast('Скопировано'));
+      });
+    });
+    modal.classList.remove('hidden');
+    modal.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeRequisitesModal() {
+    const modal = document.getElementById('deal-req-modal');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  document.querySelectorAll('[data-close="deal-req-modal"]').forEach(el => {
+    el.addEventListener('click', closeRequisitesModal);
+  });
 
   // ——— Upload check ———
   const uploadZone = document.getElementById('upload-zone');
@@ -787,10 +861,10 @@
 
   document.querySelectorAll('.screen-header.with-back .btn-back').forEach(btn => {
     btn.addEventListener('click', () => {
+      if (typeof requisitesBack === 'function' && requisitesBack()) return;
       const header = btn.closest('.screen-header.with-back');
       const back = header?.dataset.back || 'dashboard';
       showPage(back);
-      if (back === 'requisites') loadCountries();
     });
   });
 

@@ -279,6 +279,9 @@ body { padding: 0; }
   font-weight: 500;
 }
 .card-item.selected { border-color: var(--tg-accent); background: rgba(0,136,204,.06); }
+.req-option-card { align-items: flex-start; }
+.req-option-card > span { display: block; }
+.req-option-card .text-muted { display: block; margin-top: 4px; font-weight: normal; }
 .card-item-icon { flex-shrink: 0; color: var(--tg-accent); }
 .p2p-bank-wrap .card-list { margin-bottom: 10px; }
 .p2p-bank-wrap input { margin-top: 0; }
@@ -597,5 +600,31 @@ body { padding: 0; }
 @keyframes successCircle { to { stroke-dashoffset: 0; } }
 @keyframes successDraw { to { stroke-dashoffset: 0; } }
 .success-overlay p { color: var(--tg-text); font-size: 1.1rem; font-weight: 600; }
+
+/* ——— Modal overlay (реквизиты сделки) ——— */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: fadeIn 0.2s ease;
+}
+.modal-overlay.hidden { display: none; }
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.5);
+}
+.modal-card {
+  position: relative;
+  width: 100%;
+  max-width: 360px;
+  max-height: 90vh;
+  overflow: auto;
+}
+.modal-close-btn { margin-top: 8px; }
 
 .small { font-size: 0.85rem; }
