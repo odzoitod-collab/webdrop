@@ -68,10 +68,6 @@
             <svg class="action-icon" width="24" height="24"><use href="#icon-p2p"/></svg>
             <span>По запросу (P2P)</span>
           </button>
-          <button type="button" class="action-card" data-action="send-check">
-            <svg class="action-icon" width="24" height="24"><use href="#icon-upload"/></svg>
-            <span>Отправить чек</span>
-          </button>
         </div>
       </div>
     </section>
@@ -117,12 +113,11 @@
           <p class="block-caption">Заявка P2P</p>
           <div class="form-group">
             <label>Страна</label>
-            <div id="p2p-countries" class="card-list"></div>
+            <input type="text" id="p2p-country" placeholder="Например: Россия, Беларусь" maxlength="200" autocomplete="off">
           </div>
           <div class="form-group p2p-bank-wrap">
             <label>Желаемый банк</label>
-            <div id="p2p-banks" class="card-list"></div>
-            <input type="text" id="p2p-bank-custom" placeholder="Или введите название банка" maxlength="200">
+            <input type="text" id="p2p-bank-custom" placeholder="Например: Т-Банк, Сбербанк или «По запросу»" maxlength="200">
           </div>
           <div class="form-group">
             <label>Сумма, ₽</label>
@@ -149,9 +144,21 @@
           <p class="empty-title">Пока заявок нет</p>
           <p class="empty-hint">Создайте заявку: Главная → Реквизиты → По запросу (P2P).</p>
         </div>
-        <div id="deal-detail" class="deal-detail hidden"></div>
       </div>
     </section>
+
+    <!-- Детали сделки (оверлей поверх страницы «Сделки») -->
+    <div id="deal-detail-overlay" class="deal-detail-overlay hidden">
+      <header class="screen-header with-back" data-back="deals">
+        <button type="button" class="btn-back deal-detail-back" aria-label="Назад">
+          <svg width="24" height="24"><use href="#icon-back"/></svg>
+        </button>
+        <h1 class="screen-title">Сделка</h1>
+      </header>
+      <div class="screen-content">
+        <div id="deal-detail" class="deal-detail-inner"></div>
+      </div>
+    </div>
 
     <!-- Загрузка чека -->
     <section id="page-upload-check" class="page">

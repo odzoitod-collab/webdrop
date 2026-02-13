@@ -189,12 +189,9 @@
     document.getElementById('req-step-bank').classList.add('hidden');
     document.getElementById('req-step-detail').classList.add('hidden');
     document.getElementById('req-p2p-form').classList.remove('hidden');
-    state.p2pCountryId = null;
-    state.p2pCountryName = null;
     state.p2pBankName = null;
+    document.getElementById('p2p-country').value = '';
     document.getElementById('p2p-bank-custom').value = '';
-    loadP2pCountries();
-    document.getElementById('p2p-banks').innerHTML = '';
   });
   function resetUploadCheckPage() {
     state.pendingCheckFile = null;
@@ -207,11 +204,6 @@
     if (zoneText) zoneText.classList.remove('hidden');
   }
 
-  document.querySelector('[data-action="send-check"]')?.addEventListener('click', () => {
-    state.uploadContext = { type: 'standalone', requisiteId: null, dealId: null };
-    showPage('upload-check', 'dashboard');
-    resetUploadCheckPage();
-  });
 
   // ——— Requisites ———
   document.getElementById('req-by-country-btn')?.addEventListener('click', () => {
@@ -315,76 +307,13 @@
     document.getElementById('req-step-bank').classList.add('hidden');
     document.getElementById('req-step-detail').classList.add('hidden');
     document.getElementById('req-p2p-form').classList.remove('hidden');
-    state.p2pCountryId = null;
-    state.p2pCountryName = null;
     state.p2pBankName = null;
+    document.getElementById('p2p-country').value = '';
     document.getElementById('p2p-bank-custom').value = '';
-    loadP2pCountries();
-    document.getElementById('p2p-banks').innerHTML = '';
   });
-
-  async function loadP2pCountries() {
-    const container = document.getElementById('p2p-countries');
-    container.innerHTML = '<div class="skeleton skeleton-text"></div>';
-    const { data, error } = await supabase.from('countries').select('id, name').order('name');
-    container.innerHTML = '';
-    if (error) {
-      showToast(error.message, 'error');
-      return;
-    }
-    (data || []).forEach(c => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'card-item';
-      btn.innerHTML = '<svg class="card-item-icon" width="20" height="20"><use href="#icon-globe"/></svg><span>' + escapeHtml(c.name) + '</span>';
-      btn.dataset.countryId = c.id;
-      btn.dataset.countryName = c.name;
-      btn.addEventListener('click', () => selectP2pCountry(c.id, c.name));
-      container.appendChild(btn);
-    });
-  }
-
-  function selectP2pCountry(countryId, countryName) {
-    state.p2pCountryId = countryId;
-    state.p2pCountryName = countryName;
-    const container = document.getElementById('p2p-banks');
-    container.innerHTML = '<div class="skeleton skeleton-text"></div>';
-    supabase.from('banks').select('id, name').eq('country_id', countryId).order('name').then(({ data, error }) => {
-      container.innerHTML = '';
-      if (error) {
-        showToast(error.message, 'error');
-        return;
-      }
-      (data || []).forEach(b => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'card-item';
-        btn.innerHTML = '<svg class="card-item-icon" width="20" height="20"><use href="#icon-bank"/></svg><span>' + escapeHtml(b.name) + '</span>';
-        btn.addEventListener('click', () => {
-          state.p2pBankName = b.name;
-          document.getElementById('p2p-bank-custom').value = '';
-          container.querySelectorAll('.card-item').forEach(el => el.classList.remove('selected'));
-          btn.classList.add('selected');
-        });
-        container.appendChild(btn);
-      });
-      const anyBtn = document.createElement('button');
-      anyBtn.type = 'button';
-      anyBtn.className = 'card-item card-item-action';
-      anyBtn.innerHTML = '<svg class="card-item-icon" width="20" height="20"><use href="#icon-p2p"/></svg><span>По запросу</span>';
-      anyBtn.addEventListener('click', () => {
-        state.p2pBankName = 'По запросу';
-        document.getElementById('p2p-bank-custom').value = '';
-        container.querySelectorAll('.card-item').forEach(el => el.classList.remove('selected'));
-        anyBtn.classList.add('selected');
-      });
-      container.appendChild(anyBtn);
-    });
-  }
 
   document.getElementById('p2p-bank-custom')?.addEventListener('input', () => {
     state.p2pBankName = null;
-    document.getElementById('p2p-banks')?.querySelectorAll('.card-item').forEach(el => el.classList.remove('selected'));
   });
 
   document.getElementById('p2p-submit')?.addEventListener('click', () => createDeal());
@@ -392,20 +321,21 @@
   async function createDeal() {
     const amount = parseFloat(document.getElementById('p2p-amount')?.value);
     const time = parseInt(document.getElementById('p2p-time')?.value, 10);
+    const countryName = (document.getElementById('p2p-country')?.value || '').trim();
     if (!amount || amount <= 0 || !time || time < 1) {
       showToast('Укажите сумму и время', 'error');
       return;
     }
-    if (!state.p2pCountryId || !state.p2pCountryName) {
-      showToast('Выберите страну', 'error');
+    if (!countryName) {
+      showToast('Введите страну', 'error');
       return;
     }
     const customBank = (document.getElementById('p2p-bank-custom')?.value || '').trim();
-    const bankName = customBank || state.p2pBankName || 'По запросу';
+    const bankName = customBank || 'По запросу';
     const { data, error } = await supabase.from('deals').insert({
       user_telegram_id: state.telegramId,
-      country_id: state.p2pCountryId,
-      country_name: state.p2pCountryName,
+      country_id: null,
+      country_name: countryName,
       bank_name: bankName,
       amount_rub: amount,
       time_minutes: time,
@@ -470,9 +400,16 @@
     });
   }
 
+  function closeDealDetailOverlay() {
+    const overlay = document.getElementById('deal-detail-overlay');
+    if (overlay) overlay.classList.add('hidden');
+  }
+
   function showDealDetail(deal, from) {
     state.currentDealId = deal.id;
     const panel = document.getElementById('deal-detail');
+    const overlay = document.getElementById('deal-detail-overlay');
+    if (!panel || !overlay) return;
     const statusLabels = {
       pending_merchants: 'Ожидание мерчанта',
       taken: 'В работе',
@@ -483,8 +420,6 @@
       cancelled: 'Отменена'
     };
     const hasRequisites = deal.recipient_name || deal.card_number;
-    const cardNum = (deal.card_number || '').replace(/\s/g, '');
-    const displayCard = cardNum.length >= 4 ? cardNum.replace(/(.{4})/g, '$1 ').trim() : (deal.card_number || '');
     let reqBlock = '';
     if (hasRequisites) {
       reqBlock = `<button type="button" class="btn btn-outline btn-block" id="deal-show-req-btn">Реквизиты для оплаты</button>`;
@@ -504,14 +439,13 @@
         <button type="button" class="btn btn-outline btn-block back-deal-detail">Назад</button>
       </div>
     `;
-    panel.classList.remove('hidden');
-    panel.querySelector('.back-deal-detail')?.addEventListener('click', () => {
-      panel.classList.add('hidden');
-    });
+    overlay.classList.remove('hidden');
+    panel.querySelector('.back-deal-detail')?.addEventListener('click', closeDealDetailOverlay);
     panel.querySelector('#deal-show-req-btn')?.addEventListener('click', () => {
       openRequisitesModal(deal);
     });
     panel.querySelector('#deal-upload-check')?.addEventListener('click', () => {
+      closeDealDetailOverlay();
       state.uploadContext = { type: 'deal', requisiteId: null, dealId: deal.id };
       showPage('upload-check', 'deals');
       resetUploadCheckPage();
@@ -861,6 +795,11 @@
 
   document.querySelectorAll('.screen-header.with-back .btn-back').forEach(btn => {
     btn.addEventListener('click', () => {
+      const dealOverlay = document.getElementById('deal-detail-overlay');
+      if (dealOverlay && !dealOverlay.classList.contains('hidden')) {
+        closeDealDetailOverlay();
+        return;
+      }
       if (typeof requisitesBack === 'function' && requisitesBack()) return;
       const header = btn.closest('.screen-header.with-back');
       const back = header?.dataset.back || 'dashboard';

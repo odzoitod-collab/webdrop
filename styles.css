@@ -390,24 +390,30 @@ body { padding: 0; }
 .deal-status.completed { background: rgba(52,199,89,.12); color: var(--tg-success); }
 .deal-status.cancelled { background: rgba(255,59,48,.15); color: var(--tg-danger); }
 
-.deal-detail {
-  margin-top: 16px;
-  padding: 20px;
-  background: var(--tg-surface);
-  border: 1px solid var(--tg-border);
-  border-radius: var(--radius);
+/* Оверлей деталей сделки — поверх страницы «Сделки» */
+.deal-detail-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: var(--tg-bg);
+  display: flex;
+  flex-direction: column;
+  animation: fadeIn 0.2s ease;
 }
-.deal-detail .detail-row { margin-bottom: 12px; }
-.deal-detail .detail-row .label { color: var(--tg-text-secondary); font-size: 0.85rem; }
-.deal-detail .detail-section { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--tg-border); }
-.deal-detail .detail-section .block-caption { margin-bottom: 10px; }
-.deal-detail .copy-btn {
+.deal-detail-overlay.hidden { display: none; }
+.deal-detail-overlay .screen-content { flex: 1; overflow: auto; padding: 16px; }
+
+.deal-detail-inner .detail-row { margin-bottom: 12px; }
+.deal-detail-inner .detail-row .label { color: var(--tg-text-secondary); font-size: 0.85rem; }
+.deal-detail-inner .detail-section { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--tg-border); }
+.deal-detail-inner .detail-section .block-caption { margin-bottom: 10px; }
+.deal-detail-inner .copy-btn {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 6px 12px; margin-left: 8px;
   background: var(--tg-surface-hover); border: none; border-radius: var(--radius-xs);
   color: var(--tg-accent); font-size: 0.85rem; font-weight: 500; cursor: pointer;
 }
-.deal-detail .detail-actions { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+.deal-detail-inner .detail-actions { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
 
 .empty-state {
   text-align: center;
