@@ -42,26 +42,37 @@ html, body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background: var(--tg-bg);
   color: var(--tg-text);
-  min-height: 100vh;
-  min-height: 100dvh;
+  height: 100%;
+  height: 100dvh;
+  overflow: hidden;
   -webkit-font-smoothing: antialiased;
   font-size: 16px;
 }
 
-body { padding-bottom: calc(var(--nav-h) + var(--safe-bottom)); }
+body { padding: 0; }
 
 #app {
-  min-height: 100vh;
-  padding: 0 16px;
-  padding-top: max(12px, var(--safe-top));
+  height: 100%;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding-top: var(--safe-top);
 }
 
-/* ——— Pages ——— */
-.page { display: none; }
+/* ——— Pages (full-screen, контент скроллится внутри) ——— */
+.page {
+  display: none;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
 .page.active {
-  display: block;
+  display: flex;
   animation: pageIn 0.25s ease;
 }
+.page:not(.active) { display: none !important; }
 
 @keyframes pageIn {
   from { opacity: 0; transform: translateY(6px); }
@@ -72,11 +83,11 @@ body { padding-bottom: calc(var(--nav-h) + var(--safe-bottom)); }
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 20px;
+  padding: 12px 16px;
   min-height: 44px;
+  flex-shrink: 0;
+  background: var(--tg-bg);
 }
-
-.screen-header.with-back { margin-bottom: 16px; }
 
 .screen-title {
   font-size: 1.75rem;
@@ -84,7 +95,15 @@ body { padding-bottom: calc(var(--nav-h) + var(--safe-bottom)); }
   letter-spacing: -0.02em;
 }
 
-.screen-content { padding-bottom: 24px; }
+.screen-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 16px 24px;
+  padding-bottom: calc(var(--nav-h) + 24px + var(--safe-bottom));
+}
 
 .btn-back {
   width: 44px;
@@ -202,14 +221,14 @@ body { padding-bottom: calc(var(--nav-h) + var(--safe-bottom)); }
 }
 .btn-ghost:active { background: var(--tg-surface-hover); }
 
-/* ——— Auth ——— */
+/* ——— Auth (полноэкран, по центру) ——— */
 #page-auth {
-  min-height: 80vh;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 16px;
 }
-.auth-card { text-align: center; max-width: 320px; }
+#page-auth .auth-card { text-align: center; max-width: 320px; }
 .auth-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; }
 .auth-msg { color: var(--tg-text-secondary); font-size: 0.95rem; }
 .auth-card .skeleton-avatar {
